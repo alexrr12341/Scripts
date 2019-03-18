@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#Empezamos programa
+echo "¿Cuantas maquinas quieres que te haga? (1 a 3)"
+read NUM
+contador=0
+#Esto hace que mire las maquinas que tienes
+ME=$(ls | grep 'qcow2' | wc -l)
+echo  "Usted posee $ME maquinas"
+if [ $NUM -eq 1 -o $NUM -eq 2 -o $NUM -eq 3 ]
+then
+ #Esto hace que si el Num de maquinas es mayor o igual al numero puesto que haga el bucle
+if [ $ME -ge $NUM ]
+then
+#Bucle que hace maquinas por un contador, cuando ese contador llegue al numero de maquinas, para
+	while [ $contador -ne $NUM ]
+	do
+		#Creacion de Macs
+		MAC=$(echo "02:"`openssl rand -hex 5 | sed 's/\(..\)/\1:/g; s/.$//'`)
+		echo "La mac será $MAC de la maquina $contador"
+		#Creacion de interfaces taps
+		if [ $(ip tuntap list| wc -l) -le $NUM  ]
+		then
+			ip tuntap add mode tap user alexrr
+			brctl addif br0 tap$contador
+			ip l set dev tap$contador up
+		fi
+		#Creacion de maquinas
+		echo "¿Cual es la ruta de la maquina $contador?"
+		read ruta
+		kvm -m 512 -hda $ruta \
+		-device virtio-net,netdev=n0,mac=$MAC \
+		-netdev tap,id=n0,ifname=tap$contador,script=no,downscript=no &
+		#El contador va incrementando si no es igual al numero de maquinas
+		if [ $contador -ne $NUM ]
+		then
+			contador=$(($contador+1))
+		else
+			echo "Fin del programa"
+		fi
+	done
+else
+	echo "Usted no tiene maquinas suficientes"
+fi
+else
+	echo "¿¿Usted piensa destruir su maquina??"
+	echo "O simplemente usted es retrasado."
+fi
