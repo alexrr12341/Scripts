@@ -1,0 +1,53 @@
+#!/bin/bash
+#Empezamos programa
+echo "¿Cual es tu usuario?"
+read usuario
+if [ $(ip tuntap list | wc -l) -le $NUM ]
+then
+echo "Creando el puente."
+echo -e 'auto enp7s0\niface enp7s0 inet manual' >> /etc/network/interfaces
+echo -e 'auto br0\niface br0 inet dhcp\n\tbridge_ports enp7s0' >> /etc/network/interfaces
+ifup br0
+echo "Creando 3 taps"
+NUM=3
+contador=0
+#Esto hace que mire las maquinas que tienes
+ME=$(ls | grep 'qcow2' | wc -l)
+echo  "Usted posee $ME maquinas"
+	#Esto es inutil pero me da pereza quitarlo
+if [ $NUM -eq 1 -o $NUM -eq 2 -o $NUM -eq 3 ]
+then
+ #Esto hace que si el Num de maquinas es mayor o igual al numero puesto que haga el bucle
+	if [ $ME -ge $NUM ]
+	then
+#Bucle que hace taps por un contador, cuando ese contador llegue al numero de taps para
+		while [ $contador -ne $NUM ]
+		do
+		#Creacion de interfaces taps
+			if [ $(ip tuntap list| wc -l) -le $NUM  ]
+			then
+				echo "Activando tap$contador."
+				ip tuntap add mode tap user $usuario
+				brctl addif br0 tap$contador
+				ip l set dev tap$contador up
+			else
+				echo "Usted ya tiene un puente creado lol."
+			fi
+		#El contador va incrementando si no es igual al numero de taps
+			if [ $contador -ne $NUM ]
+			then
+				contador=$(($contador+1))
+			else
+				echo "Fin del programa"
+			fi
+			done
+	else
+		echo "Usted no tiene maquinas suficientes"
+	fi
+else
+	echo "¿¿Usted piensa destruir su maquina??"
+	echo "O simplemente usted es retrasado."
+fi
+else
+	echo "Usted ya tiene un puente creado lol."
+fi
