@@ -18,13 +18,6 @@ then
 		#Creacion de Macs
 		MAC=$(echo "02:"`openssl rand -hex 5 | sed 's/\(..\)/\1:/g; s/.$//'`)
 		echo "La mac será $MAC de la maquina $contador"
-		#Creacion de interfaces taps
-		if [ $(ip tuntap list| wc -l) -le $NUM  ]
-		then
-			ip tuntap add mode tap user alexrr
-			brctl addif br0 tap$contador
-			ip l set dev tap$contador up
-		fi
 		#Creacion de maquinas
 		echo "¿Cual es la ruta de la maquina $contador?"
 		read ruta
